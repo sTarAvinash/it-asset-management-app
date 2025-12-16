@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Dialog,
   DialogContent,
@@ -13,50 +15,73 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
-export default function AssetModal({ open, setOpen, setAssets }) {
-  const [model, setModel] = useState("");
-  const [serial, setSerial] = useState("");
-  const [status, setStatus] = useState("Active");
-  const [department, setDepartment] = useState("IT");
+export default function AssetModal({ open, setOpen, setAssets, editing }) {
+  const isEdit = Boolean(editing);
+
+  const [form, setForm] = useState({
+    id: "",
+    assetId: "",
+    model: "",
+    serial: "",
+    status: "Active",
+    department: "IT",
+  });
+
+  useEffect(() => {
+    if (editing) {
+      setForm(editing);
+    } else {
+      setForm({
+        id: crypto.randomUUID(),
+        assetId: "",
+        model: "",
+        serial: "",
+        status: "Active",
+        department: "IT",
+      });
+    }
+  }, [editing, open]);
 
   const save = () => {
-    setAssets((p) => [
-      ...p,
-      {
-        id: crypto.randomUUID(),
-        assetId: `IT-AST-${String(p.length + 1).padStart(4, "0")}`,
-        model,
-        serial,
-        status,
-        department,
-      },
-    ]);
+    setAssets((prev) => {
+      if (isEdit) {
+        return prev.map((a) => (a.id === form.id ? form : a));
+      }
+      return [
+        ...prev,
+        {
+          ...form,
+          assetId: `IT-AST-${String(prev.length + 1).padStart(4, "0")}`,
+        },
+      ];
+    });
     setOpen(false);
-    setModel("");
-    setSerial("");
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Add Asset</DialogTitle>
+          <DialogTitle>{isEdit ? "Edit Asset" : "Add Asset"}</DialogTitle>
         </DialogHeader>
 
         <Input
           placeholder="Model"
-          value={model}
-          onChange={(e) => setModel(e.target.value)}
+          value={form.model}
+          onChange={(e) => setForm({ ...form, model: e.target.value })}
         />
         <Input
-          placeholder="Serial"
-          value={serial}
-          onChange={(e) => setSerial(e.target.value)}
+          placeholder="Serial Number"
+          value={form.serial}
+          onChange={(e) => setForm({ ...form, serial: e.target.value })}
         />
 
-        <Select onValueChange={setStatus} defaultValue={status}>
+        <Select
+          value={form.status}
+          onValueChange={(v) => setForm({ ...form, status: v })}
+        >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
@@ -68,7 +93,10 @@ export default function AssetModal({ open, setOpen, setAssets }) {
           </SelectContent>
         </Select>
 
-        <Select onValueChange={setDepartment} defaultValue={department}>
+        <Select
+          value={form.department}
+          onValueChange={(v) => setForm({ ...form, department: v })}
+        >
           <SelectTrigger>
             <SelectValue />
           </SelectTrigger>
@@ -80,7 +108,7 @@ export default function AssetModal({ open, setOpen, setAssets }) {
           </SelectContent>
         </Select>
 
-        <Button onClick={save}>Save</Button>
+        <Button onClick={save}>{isEdit ? "Update Asset" : "Save Asset"}</Button>
       </DialogContent>
     </Dialog>
   );

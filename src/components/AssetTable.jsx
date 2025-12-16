@@ -18,6 +18,7 @@ const DEPT = ["IT", "HR", "Finance", "Sales"];
 export default function AssetTable() {
   const [assets, setAssets] = useState([]);
   const [open, setOpen] = useState(false);
+  const [editing, setEditing] = useState(null);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [dept, setDept] = useState("all");
@@ -33,21 +34,22 @@ export default function AssetTable() {
   const filtered = useMemo(() => {
     return assets.filter((a) => {
       const q = search.toLowerCase();
-      const matchQ =
-        a.assetId.toLowerCase().includes(q) ||
-        a.model.toLowerCase().includes(q) ||
-        a.serial.toLowerCase().includes(q);
-
-      const matchS = status === "all" || a.status === status;
-      const matchD = dept === "all" || a.department === dept;
-
-      return matchQ && matchS && matchD;
+      return (
+        (a.assetId + a.model + a.serial).toLowerCase().includes(q) &&
+        (status === "all" || a.status === status) &&
+        (dept === "all" || a.department === dept)
+      );
     });
   }, [assets, search, status, dept]);
 
+  const remove = (id) => {
+    if (!confirm("Are you sure you want to delete this asset?")) return;
+    setAssets((p) => p.filter((a) => a.id !== id));
+  };
+
   return (
     <div>
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="flex gap-2 mb-4">
         <Input
           placeholder="Search asset..."
           value={search}
@@ -55,7 +57,7 @@ export default function AssetTable() {
         />
 
         <Select onValueChange={setStatus}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-36">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
           <SelectContent>
@@ -69,7 +71,7 @@ export default function AssetTable() {
         </Select>
 
         <Select onValueChange={setDept}>
-          <SelectTrigger className="w-40">
+          <SelectTrigger className="w-36">
             <SelectValue placeholder="Department" />
           </SelectTrigger>
           <SelectContent>
@@ -82,10 +84,17 @@ export default function AssetTable() {
           </SelectContent>
         </Select>
 
-        <Button onClick={() => setOpen(true)}>Add Asset</Button>
+        <Button
+          onClick={() => {
+            setEditing(null);
+            setOpen(true);
+          }}
+        >
+          Add Asset
+        </Button>
       </div>
 
-      <table className="w-full bg-white shadow text-sm">
+      <table className="w-full bg-white text-sm shadow">
         <thead className="bg-gray-200">
           <tr>
             <th className="p-2">Asset ID</th>
@@ -93,6 +102,7 @@ export default function AssetTable() {
             <th>Serial</th>
             <th>Status</th>
             <th>Department</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -103,12 +113,35 @@ export default function AssetTable() {
               <td>{a.serial}</td>
               <td>{a.status}</td>
               <td>{a.department}</td>
+              <td className="flex gap-2 p-1">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setEditing(a);
+                    setOpen(true);
+                  }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => remove(a.id)}
+                >
+                  Delete
+                </Button>
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <AssetModal open={open} setOpen={setOpen} setAssets={setAssets} />
+      <AssetModal
+        open={open}
+        setOpen={setOpen}
+        setAssets={setAssets}
+        editing={editing}
+      />
     </div>
   );
 }
